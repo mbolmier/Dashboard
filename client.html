@@ -1,39 +1,3 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Clients — All In</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --bg:#f4f5f7; --surface:#ffffff; --surface2:#f0f1f5;
-      --border:#e3e6ed; --border-light:#eef0f5;
-      --accent:#2257c5; --accent-bg:#eff3fc;
-      --text:#1a2340; --text-soft:#3d4a66; --muted:#8892aa;
-      --up:#0e8f72; --down:#c04a2f;
-      --we:#7048c5; --sem:#d97706; --mix:#2257c5;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-
-    header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:20px;}
-    .page-title h1{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px;}
-    .page-title p{font-size:13px;color:var(--muted);}
-    .filters-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
-
-    .period-group{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;height:35px;}
-    .period-btn{padding:0 14px;font-size:13px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
-    .period-btn:first-child{border-radius:7px 0 0 7px;}
-    .period-btn:last-child{border-radius:0 7px 7px 0;}
-    .period-btn:hover{color:var(--text);background:var(--surface2);}
-    .period-btn.active{color:var(--accent);background:var(--accent-bg);}
-
-    .period-relative-container{position:relative;}
-    .custom-date-wrap{display:none;position:absolute;top:calc(100% + 8px);left:0;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:5px 10px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;}
-    .custom-date-wrap.open{display:flex;}
-    .custom-date-wrap label{font-size:12px;color:var(--muted);white-space:nowrap;}
-    .custom-date-wrap input[type="date"]{border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text-soft);background:var(--surface);outline:none;}
     .custom-date-wrap input[type="date"]:focus{border-color:var(--accent);}
     .custom-date-wrap .sep{color:var(--muted);font-size:12px;}
     .btn-apply{padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;}
