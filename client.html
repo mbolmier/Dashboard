@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Clients — All In</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#f4f5f7; --surface:#ffffff; --surface2:#f0f1f5;
+      --border:#e3e6ed; --border-light:#eef0f5;
+      --accent:#2257c5; --accent-bg:#eff3fc;
+      --text:#1a2340; --text-soft:#3d4a66; --muted:#8892aa;
+      --up:#0e8f72; --down:#c04a2f;
+      --we:#7048c5; --sem:#d97706; --mix:#2257c5;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:20px;}
+    .page-title h1{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px;}
+    .page-title p{font-size:13px;color:var(--muted);}
+    .filters-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+
+    .period-group{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;height:35px;}
+    .period-btn{padding:0 14px;font-size:13px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
+    .period-btn:first-child{border-radius:7px 0 0 7px;}
+    .period-btn:last-child{border-radius:0 7px 7px 0;}
+    .period-btn:hover{color:var(--text);background:var(--surface2);}
+    .period-btn.active{color:var(--accent);background:var(--accent-bg);}
+
+    .period-relative-container{position:relative;}
+    .custom-date-wrap{display:none;position:absolute;top:calc(100% + 8px);left:0;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:5px 10px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;}
+    .custom-date-wrap.open{display:flex;}
+    .custom-date-wrap label{font-size:12px;color:var(--muted);white-space:nowrap;}
+    .custom-date-wrap input[type="date"]{border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text-soft);background:var(--surface);outline:none;}
+    .custom-date-wrap input[type="date"]:focus{border-color:var(--accent);}
+    .custom-date-wrap .sep{color:var(--muted);font-size:12px;}
+    .btn-apply{padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;}
+
+    .btn-export{padding:0 14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;height:35px;}
+    .btn-export:hover{background:var(--surface2);}
+    .btn-export svg{width:14px;height:14px;color:var(--muted);}
+
+    main{padding:28px 32px;max-width:1600px;margin:0 auto;}
+
+    .section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:16px 0 12px;display:flex;align-items:center;gap:10px;}
+    .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    /* KPI rows */
+    .kpi-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+    .kpi-card{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .2s;}
+    .kpi-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.08);}
+    .kpi-label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+    .kpi-value{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1;color:var(--text);}
+    .kpi-sub{font-size:12px;margin-top:9px;display:flex;align-items:center;gap:5px;min-height:20px;}
+    .badge-up{color:var(--up);background:#eef8f4;padding:1px 6px;border-radius:4px;font-weight:600;}
+    .badge-down{color:var(--down);background:#fdf1ee;padding:1px 6px;border-radius:4px;font-weight:600;}
+
+    /* Charts */
+    .charts-row{display:grid;gap:16px;margin-bottom:16px;}
+    .row-2{grid-template-columns:1fr 1fr;}
+    .row-full{grid-template-columns:1fr;}
+    .chart-card{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;}
+    .chart-title{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.1px;}
+    .chart-subtitle{font-size:12px;color:var(--muted);margin-top:3px;}
+    .chart-wrap{position:relative;}
+    .legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+
+    /* Habitudes badges */
+    .habit-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+    .habit-badge.we{background:#f3f0fc;color:var(--we);}
+    .habit-badge.sem{background:#fdf7e8;color:var(--sem);}
+    .habit-badge.mix{background:#eff3fc;color:var(--mix);}
+
+    /* Top 50 */
+    .top50-wrap{overflow-y:auto;max-height:520px;border-radius:8px;}
+    .top50-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .top50-table th{position:sticky;top:0;background:var(--surface2);padding:8px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);}
+    .top50-table th.right{text-align:right;}
+    .top50-table th.center{text-align:center;}
+    .top50-table th.left{text-align:left;}
+    .top50-table td{padding:9px 12px;border-bottom:1px solid var(--border-light);color:var(--text);vertical-align:middle;}
+    .top50-table td.right{text-align:right;font-weight:600;}
+    .top50-table td.center{text-align:center;}
+    .top50-table td.left{text-align:left;}
+    .top50-table tr:hover td{background:var(--accent-bg);}
+    .top50-rank{font-size:11px;font-weight:700;color:var(--muted);width:30px; display:inline-block;}
+    .top50-rank.gold{color:#b8860b;}
+    .top50-rank.silver{color:#888;}
+    .top50-rank.bronze{color:#a0522d;}
+    .mini-split{display:flex;height:5px;border-radius:3px;overflow:hidden;width:80px;margin: 0 auto;}
+    .mini-we{background:var(--we);}
+    .mini-sem{background:var(--sem);}
+
+    /* Plage horaire */
+    .mini-time{display:flex;height:5px;border-radius:3px;overflow:hidden;width:72px;}
+    .mini-mat{background:#f59e0b;}
+    .mini-apm{background:#0284c7;}
+    .mini-soir{background:#7048c5;}
+    .habit-badge.mat{background:#fef9e7;color:#b45309;}
+    .habit-badge.apm{background:#e0f2fe;color:#0284c7;}
+    .habit-badge.soir{background:#f3f0fc;color:#7048c5;}
+
+    /* Tooltip global (fixed, JS-driven) */
+    #tooltip{position:fixed;background:#1a2340;color:#fff;font-size:11px;padding:5px 10px;border-radius:5px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:9999;display:none;}
+    .th-ico{width:14px;height:14px;border-radius:50%;background:var(--border);color:var(--muted);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0;}
+
+    /* Fidélisation — segments */
+    .kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+    .seg-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+    .seg-badge.rookie    {background:#eef3fe;color:#4b7dd4;}
+    .seg-badge.spec      {background:#eef8f4;color:#0e8f72;}
+    .seg-badge.elite     {background:#fdf7e8;color:#d97706;}
+    .seg-badge.legend    {background:#fef9e0;color:#b8860b;}
+    /* Funnel montée en segment */
+    .funnel{display:flex;flex-direction:column;gap:20px;}
+    .f-row{display:flex;flex-direction:column;gap:8px;}
+    .f-labels{display:flex;align-items:center;gap:8px;}
+    .f-arrow{font-size:16px;color:var(--muted);}
+    .f-bar-line{display:flex;align-items:center;gap:10px;}
+    .f-bar-wrap{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+    .f-bar{height:100%;border-radius:5px;transition:width .7s ease;}
+    .f-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+    .f-count{font-size:20px;font-weight:700;line-height:1;}
+    .f-prev{font-size:11px;color:var(--muted);}
+    .funnel-cmp{font-size:11px;font-weight:600;padding:2px 6px;border-radius:3px;flex-shrink:0;}
+    .funnel-cmp.up{color:var(--up);background:#eef8f4;}
+    .funnel-cmp.down{color:var(--down);background:#fdf1ee;}
+
+    @media(max-width:1100px){.row-2{grid-template-columns:1fr;}.kpi-row-3,.kpi-row-4{grid-template-columns:1fr 1fr;}}
+    @media(max-width:650px){.kpi-row-3,.kpi-row-4{grid-template-columns:1fr;}main{padding:16px;}header{flex-direction:column;align-items:flex-start;}}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="page-title">
+    <h1>Analyse clientèle & Fidélisation</h1>
+    <p id="pageSubtitle">En direct (Aujourd'hui)</p>
+  </div>
+  <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
+    <div>
+      <div class="filters-label">Période</div>
+      <div class="period-relative-container">
+        <div class="period-group">
+          <button class="period-btn active" onclick="setPeriod('now',this)">Temps réel</button>
+          <button class="period-btn" onclick="setPeriod('7j',this)">Il y a 7j</button>
+          <button class="period-btn" onclick="setPeriod('1m',this)">Il y a 1 mois</button>
+          <button class="period-btn" onclick="setPeriod('3m',this)">Il y a 3 mois</button>
+          <button class="period-btn" onclick="setPeriod('6m',this)">Il y a 6 mois</button>
+          <button class="period-btn" onclick="setPeriod('1y',this)">Il y a 1 an</button>
+          <button class="period-btn" onclick="setPeriod('custom',this)">Personnalisé</button>
+        </div>
+        <div class="custom-date-wrap" id="customDateWrap">
+          <label>Du</label><input type="date" id="dateFrom" value="2025-11-01"/>
+          <span class="sep">→</span>
+          <label>au</label><input type="date" id="dateTo" value="2026-04-30"/>
+          <button class="btn-apply" onclick="applyCustomDate()">Appliquer</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-export">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exporter
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <div class="section-label">Vue d'ensemble</div>
+  <div class="kpi-row-3">
+    <div class="kpi-card">
+      <div class="kpi-label">Clients actifs <span style="font-size:10px;font-weight:400;text-transform:none;">— fenêtre de 3 mois</span></div>
+      <div class="kpi-value" id="kpi-actifs">—</div>
+      <div class="kpi-sub"><span id="badge-actifs" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">vs période préc.</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nouveaux clients <span style="font-size:10px;font-weight:400;text-transform:none;">— sur la période</span></div>
+      <div class="kpi-value" id="kpi-new">—</div>
+      <div class="kpi-sub"><span id="badge-new" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">—</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Fréquence moyenne</div>
+      <div class="kpi-value" id="kpi-freq">—</div>
+      <div class="kpi-sub"><span id="kpi-freq-sub" style="color:var(--muted)">—</span></div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:4px;">Fidélisation
+    <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;">— basé sur la période sélectionnée</span>
+  </div>
+  <div class="kpi-row-4">
+    <div class="kpi-card" style="border-top:3px solid #4b7dd4;">
+      <div class="kpi-label" style="color:#4b7dd4;">🟦 Rookie <span style="font-size:10px;font-weight:400;color:var(--muted);">1 partie / 3 mois</span></div>
+      <div class="kpi-value" id="kpi-rookie">—</div>
+      <div class="kpi-sub"><span id="badge-rookie" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">vs période préc.</span></div>
+    </div>
+    <div class="kpi-card" style="border-top:3px solid #0e8f72;">
+      <div class="kpi-label" style="color:#0e8f72;">🟩 Spécialiste <span style="font-size:10px;font-weight:400;color:var(--muted);">2-3 parties / 3 mois</span></div>
+      <div class="kpi-value" id="kpi-spec">—</div>
+      <div class="kpi-sub"><span id="badge-spec" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">vs période préc.</span></div>
+    </div>
+    <div class="kpi-card" style="border-top:3px solid #d97706;">
+      <div class="kpi-label" style="color:#d97706;">🟧 Élite <span style="font-size:10px;font-weight:400;color:var(--muted);">4-5 parties / 3 mois</span></div>
+      <div class="kpi-value" id="kpi-elite">—</div>
+      <div class="kpi-sub"><span id="badge-elite" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">vs période préc.</span></div>
+    </div>
+    <div class="kpi-card" style="border-top:3px solid #b8860b;">
+      <div class="kpi-label" style="color:#b8860b;">🏆 Légende <span style="font-size:10px;font-weight:400;color:var(--muted);">6+ parties / 3 mois</span></div>
+      <div class="kpi-value" id="kpi-legend">—</div>
+      <div class="kpi-sub"><span id="badge-legend" class="badge-up">—</span><span class="dyn-vs" style="color:var(--muted)">vs période préc.</span></div>
+    </div>
+  </div>
+
+  <div class="charts-row row-2" style="margin-bottom:20px;">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Évolution des segments</div><div class="chart-subtitle">Nombre de clients par segment sur la période sélectionnée</div></div></div>
+      <div class="legend" style="margin-bottom:12px;">
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:#4b7dd4;flex-shrink:0"></div>Rookie</div>
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:#0e8f72;flex-shrink:0"></div>Spécialiste</div>
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:#d97706;flex-shrink:0"></div>Élite</div>
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:#b8860b;flex-shrink:0"></div>Légende</div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="segEvoChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Montée en segment</div><div class="chart-subtitle" id="funnelSubtitle">Clients ayant progressé — <span class="dyn-vs">vs période préc.</span></div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+          <span style="font-size:22px;font-weight:700;color:var(--up);line-height:1;" id="totalMontees">—</span>
+          <span style="font-size:11px;color:var(--muted);">montées totales</span>
+        </div>
+      </div>
+      <div class="funnel" id="funnelList"></div>
+    </div>
+  </div>
+
+  <div class="charts-row row-full">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Nouveaux clients vs Nouveaux inactifs</div>
+          <div class="chart-subtitle">Flux net sur la période</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+          <span style="font-size:18px;font-weight:700;color:var(--down);line-height:1;">3 474</span>
+          <span style="font-size:11px;color:var(--muted);">inactifs totaux</span>
+        </div>
+      </div>
+      <div class="legend" style="margin-bottom:12px;">
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:var(--up);flex-shrink:0"></div>Nouveaux</div>
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:var(--down);flex-shrink:0"></div>Inactifs</div>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="flowChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Habitudes de jeu</div>
+  <div class="kpi-row-3" style="margin-bottom:16px;">
+    <div class="kpi-card" style="border-top:3px solid var(--we);">
+      <div class="kpi-label">Joueurs week-end</div>
+      <div class="kpi-value" id="kpi-we-nb">—</div>
+      <div class="kpi-sub" style="color:var(--muted)" id="kpi-we-sub">—</div>
+    </div>
+    <div class="kpi-card" style="border-top:3px solid var(--sem);">
+      <div class="kpi-label">Joueurs semaine</div>
+      <div class="kpi-value" id="kpi-sem-nb">—</div>
+      <div class="kpi-sub" style="color:var(--muted)" id="kpi-sem-sub">—</div>
+    </div>
+    <div class="kpi-card" style="border-top:3px solid var(--mix);">
+      <div class="kpi-label">Profils mixtes</div>
+      <div class="kpi-value" id="kpi-mix-nb">—</div>
+      <div class="kpi-sub" style="color:var(--muted)" id="kpi-mix-sub">—</div>
+    </div>
+  </div>
+
+  <div class="charts-row row-full">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Réservations semaine vs week-end</div><div class="chart-subtitle" id="weVsSemSub">Volume sur la période</div></div></div>
+      <div class="legend" style="margin-bottom:12px;">
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:var(--we);flex-shrink:0"></div>Week-end</div>
+        <div class="legend-item"><div style="width:10px;height:10px;border-radius:2px;background:var(--sem);flex-shrink:0"></div>Semaine</div>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="weVsSemChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Top 50 — Clients les plus actifs (de la période)</div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div><div class="chart-title">Classement des 50 meilleurs hosteurs</div><div class="chart-subtitle" id="top50Sub">Nombre de réservations sur la période · barre = part WE (violet) vs semaine (orange)</div></div>
+    </div>
+    <div class="top50-wrap">
+      <table class="top50-table">
+        <thead>
+          <tr>
+            <th class="center" style="width:36px">#</th>
+            <th class="left">Client</th>
+            <th class="right">Réservations</th>
+            <th class="right">Week-end</th>
+            <th class="right">Semaine</th>
+            <th class="center">Répartition WE/Sem</th>
+            <th class="center">Profil</th>
+            <th class="left">
+              Plage horaire&nbsp;<span class="th-ico" data-tip="Matin : 8h–12h  ·  Après-midi : 12h–17h  ·  Soir : 17h–23h">i</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="top50Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let currentPeriod = 'now';
+
+const DAY_NAMES  = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const ALL_MONTHS = ['Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc','Jan','Fév','Mar','Avr'];
+const TT = {backgroundColor:'#1a2340',borderColor:'transparent',borderWidth:0,titleColor:'#fff',bodyColor:'#c8cfe0',padding:10,cornerRadius:6,boxPadding:4};
+const SCALE_X  = {grid:{color:'rgba(0,0,0,0.04)',drawBorder:false},ticks:{color:'#8892aa',font:{size:11}},border:{display:false}};
+const SCALE_Y0 = {grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8892aa',font:{size:11}},border:{display:false},min:0};
+
+function seededRand(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/4294967296;};}
+function fmtBig(n){return n>=1000?Math.floor(n/1000)+' '+String(n%1000).padStart(3,'0'):String(n);}
+
+// ── Labels dynamiques basés sur la date du jour ──────────────────────────────
+const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+
+function genMonthLabels(count, endMonthsAgo = 0) {
+  const thisYear = new Date().getFullYear();
+  return Array.from({length: count}, (_, i) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - endMonthsAgo - (count - 1 - i));
+    const mn = MONTHS_FR[d.getMonth()];
+    return d.getFullYear() !== thisYear ? mn + " '" + String(d.getFullYear()).slice(2) : mn;
+  });
+}
+
+function genCustomLabels(count = 5) {
+  const from = new Date(document.getElementById('dateFrom').value + 'T00:00:00');
+  const to   = new Date(document.getElementById('dateTo').value   + 'T00:00:00');
+  if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+    return Array.from({length: count}, (_, i) => 'P' + (i + 1));
+  }
+  const all = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(to.getFullYear(),   to.getMonth(),   1);
+  while (cur <= end) { all.push(MONTHS_FR[cur.getMonth()]); cur.setMonth(cur.getMonth() + 1); }
+  if (all.length === 0) return Array.from({length: count}, (_, i) => 'P' + (i + 1));
+  if (all.length <= count) return all;
+  const step = (all.length - 1) / (count - 1);
+  return Array.from({length: count}, (_, i) => all[Math.round(i * step)]);
+}
+
+function getChartLabels(period) {
+  if (period === 'custom') return genCustomLabels(5);
+  const today = new Date();
+  const pEnd  = new Date(today);
+  if      (period === '7j') pEnd.setDate(today.getDate() - 7);
+  else if (period === '1m') pEnd.setMonth(today.getMonth() - 1);
+  else if (period === '3m') pEnd.setMonth(today.getMonth() - 3);
+  else if (period === '6m') pEnd.setMonth(today.getMonth() - 6);
+  else if (period === '1y') pEnd.setFullYear(today.getFullYear() - 1);
+  const endAgo = (today.getFullYear() - pEnd.getFullYear()) * 12 + (today.getMonth() - pEnd.getMonth());
+  return genMonthLabels(6, endAgo);
+}
+
+function getChartLabels12(period) {
+  if (period === 'custom') {
+    const to = new Date(document.getElementById('dateTo').value + 'T00:00:00');
+    const today = new Date();
+    const endAgo = isNaN(to.getTime()) ? 0 :
+      Math.max(0, (today.getFullYear() - to.getFullYear()) * 12 + (today.getMonth() - to.getMonth()));
+    return genMonthLabels(12, endAgo);
+  }
+  const today = new Date();
+  const pEnd  = new Date(today);
+  if      (period === '7j') pEnd.setDate(today.getDate() - 7);
+  else if (period === '1m') pEnd.setMonth(today.getMonth() - 1);
+  else if (period === '3m') pEnd.setMonth(today.getMonth() - 3);
+  else if (period === '6m') pEnd.setMonth(today.getMonth() - 6);
+  else if (period === '1y') pEnd.setFullYear(today.getFullYear() - 1);
+  const endAgo = (today.getFullYear() - pEnd.getFullYear()) * 12 + (today.getMonth() - pEnd.getMonth());
+  return genMonthLabels(12, endAgo);
+}
+
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const KPI = {
+  'now': {newCli:148, newDelta:+17, freq:'2.4', freqSub:'visites moy. / 3 mois'},
+  '7j':  {newCli:145, newDelta:+15, freq:'2.4', freqSub:'visites moy. / 3 mois'},
+  '1m':  {newCli:132, newDelta:+12, freq:'2.3', freqSub:'visites moy. / 3 mois'},
+  '3m':  {newCli:110, newDelta:+25, freq:'2.2', freqSub:'visites moy. / 3 mois'},
+  '6m':  {newCli:85,  newDelta:+18, freq:'2.1', freqSub:'visites moy. / 3 mois'},
+  '1y':  {newCli:60,  newDelta:+14, freq:'1.9', freqSub:'visites moy. / 3 mois'},
+  'custom':{newCli:90,  newDelta:+10, freq:'2.1', freqSub:'visites moy. / 3 mois'}
+};
+
+const SEG_DATA = {
+  'now': {rookie:275, spec:158, elite:78, legend:35, rookieDelta:+24, specDelta:+12, eliteDelta:+5, legendDelta:+2},
+  '7j':  {rookie:272, spec:155, elite:76, legend:35, rookieDelta:+22, specDelta:+11, eliteDelta:+5, legendDelta:+2},
+  '1m':  {rookie:258, spec:148, elite:72, legend:32, rookieDelta:+18, specDelta:+9,  eliteDelta:+4, legendDelta:+1},
+  '3m':  {rookie:235, spec:130, elite:65, legend:30, rookieDelta:+30, specDelta:+20, eliteDelta:+15, legendDelta:+5}, 
+  '6m':  {rookie:205, spec:110, elite:50, legend:25, rookieDelta:+55, specDelta:+30, eliteDelta:+15, legendDelta:+10},
+  '1y':  {rookie:150, spec:80,  elite:35, legend:15, rookieDelta:+40, specDelta:+20, eliteDelta:+10, legendDelta:+5},
+  'custom':{rookie:220, spec:120, elite:55, legend:28, rookieDelta:+20, specDelta:+10, eliteDelta:+4, legendDelta:+2}
+};
+
+const FUNNEL_DATA = {
+  'now': {rs:[95,80], se:[40,32], el:[15,12]},
+  '7j':  {rs:[92,78], se:[38,30], el:[14,12]},
+  '1m':  {rs:[85,75], se:[35,28], el:[12,10]},
+  '3m':  {rs:[70,55], se:[28,20], el:[10,6]},
+  '6m':  {rs:[55,40], se:[20,12], el:[6,3]},
+  '1y':  {rs:[30,20], se:[10,5],  el:[3,1]},
+  'custom':{rs:[60,50], se:[25,18], el:[8,5]}
+};
+
+const SEG_EVO_DATA = {
+  'now': {lab:['M-5','M-4','M-3','M-2','M-1','Auj.'], rookie:[233,240,216,228,238,275], spec:[130,136,116,122,128,158], elite:[63,68,54,57,60,78], legend:[28,31,23,24,26,35]},
+  '7j':  {lab:['M-5','M-4','M-3','M-2','M-1','-7j'], rookie:[233,240,216,228,238,272], spec:[130,136,116,122,128,155], elite:[63,68,54,57,60,76], legend:[28,31,23,24,26,35]},
+  '1m':  {lab:['M-6','M-5','M-4','M-3','M-2','-1m'], rookie:[205,233,240,216,228,258], spec:[110,130,136,116,122,148], elite:[50,63,68,54,57,72], legend:[25,28,31,23,24,32]},
+  '3m':  {lab:['M-8','M-7','M-6','M-5','M-4','-3m'], rookie:[180,195,205,233,240,235], spec:[95,100,110,130,136,130], elite:[42,45,50,63,68,65], legend:[20,22,25,28,31,30]},
+  '6m':  {lab:['M-11','M-10','M-9','M-8','M-7','-6m'], rookie:[150,165,180,195,205,205], spec:[80,85,95,100,110,110], elite:[35,38,42,45,50,50], legend:[15,18,20,22,25,25]},
+  '1y':  {lab:['M-17','M-16','M-15','M-14','M-13','-1an'], rookie:[110,120,130,140,145,150], spec:[50,60,70,75,78,80], elite:[20,25,28,30,32,35], legend:[5,8,10,12,14,15]},
+  'custom':{lab:['P1','P2','P3','P4','P5'], rookie:[180,190,200,210,220], spec:[90,100,110,115,120], elite:[40,45,48,52,55], legend:[20,22,25,26,28]}
+};
+
+const HABIT = {
+  'now': {we:180, sem:290, mix:76},
+  '7j':  {we:178, sem:288, mix:72},
+  '1m':  {we:170, sem:270, mix:68},
+  '3m':  {we:155, sem:240, mix:65},
+  '6m':  {we:130, sem:210, mix:50},
+  '1y':  {we:90,  sem:150, mix:40},
+  'custom':{we:120, sem:200, mix:60}
+};
+
+const FLOW = {
+  'now':    {nouv:[28,30,32,35,38,44,50,46,52,48,58,60],    inact:[12,10,14,15,18,28,32,24,20,16,18,15]},
+  '7j':     {nouv:[25,28,30,32,35,38,44,50,46,52,48,58],    inact:[10,12,10,14,15,18,28,32,24,20,16,18]},
+  '1m':     {nouv:[25,28,30,32,35,38,44,50,46,52,48,58],    inact:[10,12,10,14,15,18,28,32,24,20,16,18]},
+  '3m':     {nouv:[20,22,25,28,30,32,35,38,44,50,46,52],    inact:[8,9,10,12,10,14,15,18,28,32,24,20]},
+  '6m':     {nouv:[15,18,20,22,25,28,30,32,35,38,44,50],    inact:[5,6,8,9,10,12,10,14,15,18,28,32]},
+  '1y':     {nouv:[10,12,14,16,18,20,22,25,28,30,32,35],    inact:[3,4,5,6,5,8,9,10,12,10,14,15]},
+  'custom': {nouv:[22,25,28,30,32,35,38,44,50,46,52,55],    inact:[8,9,10,12,10,14,15,18,28,32,24,22]}
+};
+
+const WE_SEM = {
+  'now':    {we:[100,110,120,130,140,150,168,176,198,185,204,228], sem:[180,190,200,210,220,242,278,288,324,300,316,345]},
+  '7j':     {we:[90,100,110,120,130,140,150,168,176,198,185,204],  sem:[170,180,190,200,210,220,242,278,288,324,300,316]},
+  '1m':     {we:[90,100,110,120,130,140,150,168,176,198,185,204],  sem:[170,180,190,200,210,220,242,278,288,324,300,316]},
+  '3m':     {we:[78,85,92,100,110,120,130,140,150,168,176,198],    sem:[155,165,175,185,195,210,220,235,250,270,285,315]},
+  '6m':     {we:[55,62,68,75,82,90,100,110,120,130,140,150],       sem:[120,130,138,148,158,170,180,192,205,218,230,245]},
+  '1y':     {we:[40,45,48,52,55,60,65,72,80,88,95,102],            sem:[90,96,102,108,114,120,130,140,150,160,170,180]},
+  'custom': {we:[80,90,100,110,120,130,140,150,168,176,185,204],   sem:[155,168,180,192,205,218,230,245,265,280,300,318]}
+};
+
+const NAMES = [
+  'Sophie M.','Thomas R.','Claire D.','Lucas B.','Camille P.',
+  'Antoine L.','Inès F.','Marc G.','Julie S.','Nicolas T.',
+  'Léa C.','Romain V.','Emma W.','Maxime A.','Sarah K.',
+  'Pierre H.','Laura J.','Alexis N.','Manon E.','Hugo Q.',
+  'Céline Z.','Baptiste I.','Lucie Y.','Florian X.','Pauline U.',
+  'Olivier O.','Marine L.','Quentin M.','Alice R.','Sébastien D.',
+  'Nathalie B.','Julien C.','Amélie F.','Thibault G.','Clara H.',
+  'Vincent J.','Elisa K.','Arnaud N.','Chloé P.','Grégoire Q.',
+  'Aurélie S.','Damien T.','Mathilde V.','Clément W.','Noémie X.',
+  'Edouard Y.','Justine Z.','Benoît A.','Anaïs B.','Raphaël C.',
+];
+
+function getTop50() {
+  const r = seededRand(currentPeriod.length * 17 + 42);
+  const pBase = {'now':98, '7j':96,'1m':85,'3m':70,'6m':55,'1y':35, 'custom':72}[currentPeriod]||98;
+  return NAMES.map((name, i) => {
+    const total = Math.max(2, Math.round(pBase * (1 - i*0.014) + (r()-0.5)*pBase*0.18));
+    const wePct = Math.round(25 + r()*55);
+    const we    = Math.round(total * wePct / 100);
+    const sem   = total - we;
+    let profil  = wePct >= 60 ? 'we' : wePct <= 40 ? 'sem' : 'mix';
+    const matPct  = Math.round(10 + r() * 35);
+    const apmPct  = Math.round(15 + r() * 35);
+    const soirPct = 100 - matPct - apmPct;
+    const domTime = matPct >= apmPct && matPct >= soirPct ? 'mat' : apmPct >= soirPct ? 'apm' : 'soir';
+    return {name, total, we, sem, wePct, profil, matPct, apmPct, soirPct, domTime};
+  }).sort((a,b)=>b.total-a.total);
+}
+
+// ══════════════════════════════════════════
+//  UPDATES
+// ══════════════════════════════════════════
+function setBadge(id, v, unit='') {
+  const el = document.getElementById(id);
+  el.textContent = (v>=0?'▲ +':'▼ ')+Math.abs(v)+unit;
+  el.className   = v>=0 ? 'badge-up' : 'badge-down';
+}
+
+function prevLabel() {
+  const m = {'now':'3 mois préc.','7j':'7j préc.','1m':'mois préc.','3m':'3 mois préc.','6m':'6 mois préc.','1y':'an préc.', 'custom':'période préc.'};
+  return m[currentPeriod]||'période préc.';
+}
+
+function prevLabelShort() {
+  const m = {'now':'3 mois préc.','7j':'7j préc.','1m':'Mois préc.','3m':'3 mois préc.','6m':'6 mois préc.','1y':'An préc.', 'custom':'Période préc.'};
+  return m[currentPeriod]||'Période préc.';
+}
+
+function updateKPIs() {
+  const p = KPI[currentPeriod]||KPI['now'];
+  const pSeg = SEG_DATA[currentPeriod]||SEG_DATA['now'];
+  
+  const vsText = 'vs ' + prevLabel();
+  document.querySelectorAll('.dyn-vs').forEach(el => el.textContent = vsText);
+
+  const act = pSeg.rookie + pSeg.spec + pSeg.elite + pSeg.legend;
+  const actDelta = pSeg.rookieDelta + pSeg.specDelta + pSeg.eliteDelta + pSeg.legendDelta;
+  
+  document.getElementById('kpi-actifs').textContent = fmtBig(act);
+  setBadge('badge-actifs', actDelta);
+  document.getElementById('kpi-new').textContent   = fmtBig(p.newCli);
+  setBadge('badge-new', p.newDelta);
+  document.getElementById('kpi-freq').textContent  = p.freq+'x';
+  document.getElementById('kpi-freq-sub').textContent = p.freqSub;
+}
+
+function updateSegKPIs() {
+  const pSeg = SEG_DATA[currentPeriod]||SEG_DATA['now'];
+  
+  document.getElementById('kpi-rookie').textContent = fmtBig(pSeg.rookie);
+  setBadge('badge-rookie', pSeg.rookieDelta);
+  document.getElementById('kpi-spec').textContent   = fmtBig(pSeg.spec);
+  setBadge('badge-spec', pSeg.specDelta);
+  document.getElementById('kpi-elite').textContent  = fmtBig(pSeg.elite);
+  setBadge('badge-elite', pSeg.eliteDelta);
+  document.getElementById('kpi-legend').textContent = fmtBig(pSeg.legend);
+  setBadge('badge-legend', pSeg.legendDelta);
+}
+
+function updateHabitKPIs() {
+  const h = HABIT[currentPeriod]||HABIT['now'];
+  const tot = h.we + h.sem + h.mix;
+  if(tot === 0) {
+    document.getElementById('kpi-we-nb').textContent = 0;
+    document.getElementById('kpi-sem-nb').textContent = 0;
+    document.getElementById('kpi-mix-nb').textContent = 0;
+    return;
+  }
+  document.getElementById('kpi-we-nb').textContent  = h.we;
+  document.getElementById('kpi-we-sub').textContent = Math.round(h.we/tot*100)+'% des réservations · majorité WE';
+  document.getElementById('kpi-sem-nb').textContent = h.sem;
+  document.getElementById('kpi-sem-sub').textContent= Math.round(h.sem/tot*100)+'% des réservations · majorité semaine';
+  document.getElementById('kpi-mix-nb').textContent = h.mix;
+  document.getElementById('kpi-mix-sub').textContent= Math.round(h.mix/tot*100)+'% des réservations · jeu équilibré';
+}
+
+// ══════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════
+let flowChart;
+function buildFlowChart() {
+  const cfg = FLOW[currentPeriod]||FLOW['now'];
+  if(flowChart) flowChart.destroy();
+  flowChart = new Chart(document.getElementById('flowChart').getContext('2d'),{
+    type:'bar',data:{labels:getChartLabels12(currentPeriod),datasets:[
+      {label:'Nouveaux',data:cfg.nouv, backgroundColor:'#0e8f72',borderRadius:4,barPercentage:.45,categoryPercentage:.7},
+      {label:'Inactifs', data:cfg.inact,backgroundColor:'#c04a2f',borderRadius:4,barPercentage:.45,categoryPercentage:.7},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,mode:'index',callbacks:{label:c=>` ${c.dataset.label} : ${c.parsed.y} clients`}}},scales:{x:{...SCALE_X,grid:{display:false}},y:SCALE_Y0}}
+  });
+}
+
+let segEvoChart;
+function buildSegEvoChart() {
+  const sEvo = SEG_EVO_DATA[currentPeriod]||SEG_EVO_DATA['now'];
+  if(segEvoChart) segEvoChart.destroy();
+  segEvoChart = new Chart(document.getElementById('segEvoChart').getContext('2d'),{
+    type:'line',
+    data:{labels:getChartLabels(currentPeriod), datasets:[
+      {label:'Rookie',     data:sEvo.rookie, borderColor:'#4b7dd4',backgroundColor:'rgba(75,125,212,.08)', fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'Spécialiste',data:sEvo.spec,   borderColor:'#0e8f72',backgroundColor:'rgba(14,143,114,.08)', fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'Élite',      data:sEvo.elite,  borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.08)',  fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'Légende',    data:sEvo.legend, borderColor:'#b8860b',backgroundColor:'rgba(184,134,11,.08)', fill:true,tension:.4,pointRadius:4,borderWidth:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},interaction:{mode:'index',intersect:false},
+      scales:{x:SCALE_X, y:SCALE_Y0},
+      plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label} : ${c.parsed.y} clients`}}}
+    }
+  });
+}
+
+function buildFunnel() {
+  const f = FUNNEL_DATA[currentPeriod]||FUNNEL_DATA['now'];
+  const max = f.rs[0] > 0 ? f.rs[0] : 1; 
+  const rows = [
+    {from:'Rookie',fromCls:'rookie',to:'Spécialiste',toCls:'spec',  cur:f.rs[0],prev:f.rs[1],color:'#0e8f72'},
+    {from:'Spécialiste',fromCls:'spec',to:'Élite',toCls:'elite',    cur:f.se[0],prev:f.se[1],color:'#d97706'},
+    {from:'Élite',fromCls:'elite',to:'Légende',toCls:'legend',      cur:f.el[0],prev:f.el[1],color:'#b8860b'},
+  ];
+  const total = f.rs[0]+f.se[0]+f.el[0];
+  document.getElementById('totalMontees').textContent = total;
+  document.getElementById('funnelList').innerHTML = rows.map(r=>{
+    const delta  = r.cur - r.prev;
+    const cls    = delta >= 0 ? 'up' : 'down';
+    const dTxt   = (delta>=0?'▲ +':'▼ ')+Math.abs(delta);
+    const barW   = Math.round(r.cur/max*100);
+    return `<div class="f-row">
+      <div class="f-labels">
+        <span class="seg-badge ${r.fromCls}">${r.from}</span>
+        <span class="f-arrow">→</span>
+        <span class="seg-badge ${r.toCls}">${r.to}</span>
+      </div>
+      <div class="f-bar-line">
+        <div class="f-bar-wrap"><div class="f-bar" style="width:${barW}%;background:${r.color}"></div></div>
+        <div class="f-right">
+          <span class="f-count" style="color:${r.color}">${r.cur}</span>
+          <span class="funnel-cmp ${cls}">${dTxt}</span>
+        </div>
+      </div>
+      <div class="f-prev">${prevLabelShort()} : ${r.prev} clients</div>
+    </div>`;
+  }).join('');
+}
+
+let weVsSemChart;
+function buildWeVsSemChart() {
+  const cfg = WE_SEM[currentPeriod]||WE_SEM['now'];
+  if(weVsSemChart) weVsSemChart.destroy();
+  weVsSemChart = new Chart(document.getElementById('weVsSemChart').getContext('2d'),{
+    type:'bar',data:{labels:getChartLabels12(currentPeriod),datasets:[
+      {label:'Week-end',data:cfg.we, backgroundColor:'#7048c5',borderRadius:4,barPercentage:.45,categoryPercentage:.7},
+      {label:'Semaine', data:cfg.sem,backgroundColor:'#d97706',borderRadius:4,barPercentage:.45,categoryPercentage:.7},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,mode:'index',callbacks:{label:c=>` ${c.dataset.label} : ${c.parsed.y} résa`}}},scales:{x:{...SCALE_X,grid:{display:false}},y:SCALE_Y0}}
+  });
+}
+
+function buildTop50() {
+  const clients = getTop50();
+  const labels  = {we:'Week-end',sem:'Semaine',mix:'Mixte'};
+  const badgeCls= {we:'we',sem:'sem',mix:'mix'};
+  const rankCls = (i) => i===0?'gold':i===1?'silver':i===2?'bronze':'';
+
+  document.getElementById('top50Body').innerHTML = clients.map((c,i)=>`
+    <tr>
+      <td class="center"><span class="top50-rank ${rankCls(i)}">${i+1}</span></td>
+      <td class="left" style="font-weight:600">${c.name}</td>
+      <td class="right">${c.total}</td>
+      <td class="right" style="color:var(--we)">${c.we}</td>
+      <td class="right" style="color:var(--sem)">${c.sem}</td>
+      <td class="center">
+        <div class="mini-split" style="margin: 0 auto;">
+          <div class="mini-we" style="width:${c.wePct}%"></div>
+          <div class="mini-sem" style="width:${100-c.wePct}%"></div>
+        </div>
+      </td>
+      <td class="center"><span class="habit-badge ${badgeCls[c.profil]}">${labels[c.profil]}</span></td>
+      <td class="left">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div class="mini-time">
+            <div class="mini-mat"  style="width:${c.matPct}%"></div>
+            <div class="mini-apm"  style="width:${c.apmPct}%"></div>
+            <div class="mini-soir" style="width:${c.soirPct}%"></div>
+          </div>
+          <span class="habit-badge ${c.domTime}">${{mat:'Matin',apm:'Après-midi',soir:'Soir'}[c.domTime]}</span>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+
+// ══════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════
+function setPeriod(p,btn){
+  currentPeriod=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('customDateWrap').classList.toggle('open',p==='custom');
+  const labels={'now':'En direct (Aujourd\'hui)', '7j':'Il y a 7 jours','1m':'Il y a 1 mois','3m':'Il y a 3 mois','6m':'Il y a 6 mois','1y':'Il y a 1 an', 'custom':'Période personnalisée'};
+  document.getElementById('pageSubtitle').textContent=labels[p]||'';
+  if(p!=='custom') refreshAll();
+}
+
+function applyCustomDate(){
+  refreshAll();
+}
+
+function refreshAll(){
+  updateKPIs(); updateSegKPIs(); updateHabitKPIs();
+  buildSegEvoChart(); buildFunnel(); buildFlowChart();
+  buildWeVsSemChart(); buildTop50();
+}
+
+// Tooltip global
+const _tt = document.createElement('div');
+_tt.id = 'tooltip';
+document.body.appendChild(_tt);
+document.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', e => {
+    _tt.textContent = el.dataset.tip;
+    _tt.style.display = 'block';
+  });
+  el.addEventListener('mousemove', e => {
+    _tt.style.left = (e.clientX + 12) + 'px';
+    _tt.style.top  = (e.clientY - 28) + 'px';
+  });
+  el.addEventListener('mouseleave', () => { _tt.style.display = 'none'; });
+});
+
+Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
+refreshAll(); // Init Load
+</script>
+</body>
+</html>
