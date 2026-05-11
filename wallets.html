@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Wallets — All In</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#f4f5f7; --surface:#ffffff; --surface2:#f0f1f5;
+      --border:#e3e6ed; --border-light:#eef0f5;
+      --accent:#2257c5; --accent-bg:#eff3fc;
+      --text:#1a2340; --text-soft:#3d4a66; --muted:#8892aa;
+      --up:#0e8f72; --down:#c04a2f;
+      --rech:#0e8f72; --dep:#2257c5; --dorm:#d97706;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+    /* ── Header simplifié ── */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:16px;}
+    .page-title h1{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:2px;}
+    .page-title p{font-size:12px;color:var(--muted);}
+
+    .btn-export{padding:0 14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;height:34px;}
+    .btn-export:hover{background:var(--surface2);}
+    .btn-export svg{width:14px;height:14px;color:var(--muted);}
+
+    main{padding:28px 32px;max-width:1600px;margin:0 auto;}
+
+    /* ── Layout deux colonnes ── */
+    .split-layout{display:flex;align-items:stretch;margin-bottom:28px;gap:0;}
+    .split-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;}
+    .split-col.col-left{padding-right:28px;}
+    .split-col.col-right{padding-left:28px;}
+    .split-divider{width:1px;background:var(--border);flex-shrink:0;margin:0;}
+
+    /* ── Carte filtre centrée dans chaque colonne ── */
+    .col-filter-card{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:14px 20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .col-filter-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px;}
+    .col-filter-label span{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+    /* ── Filtre A : boutons période ── */
+    .period-group{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;height:34px;flex-wrap:wrap;}
+    .period-btn{padding:0 13px;font-size:12.5px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;height:100%;}
+    .period-btn:first-child{border-radius:7px 0 0 7px;}
+    .period-btn:last-child{border-radius:0 7px 7px 0;}
+    .period-btn:hover{color:var(--text);background:var(--surface2);}
+    .period-btn.active{color:var(--rech);background:#eef8f4;}
+
+    .period-relative-container{position:relative;}
+    .custom-date-wrap{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);align-items:center;gap:6px;background:var(--surface);border:1px solid var(--rech);border-radius:8px;padding:5px 10px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;white-space:nowrap;}
+    .custom-date-wrap.open{display:flex;}
+    .custom-date-wrap label{font-size:12px;color:var(--muted);}
+    .custom-date-wrap input[type="date"]{border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text-soft);background:var(--surface);outline:none;}
+    .custom-date-wrap input[type="date"]:focus{border-color:var(--rech);}
+    .custom-date-wrap .sep{color:var(--muted);font-size:12px;}
+    .btn-apply{padding:4px 10px;background:var(--rech);color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;}
+
+    /* ── Filtre B : date snapshot ── */
+    .snapshot-wrap{display:flex;align-items:center;gap:8px;height:34px;}
+    .snapshot-input{border:1px solid var(--border);border-radius:8px;padding:0 12px;font-size:13px;font-weight:500;color:var(--text-soft);background:var(--surface);outline:none;height:100%;cursor:pointer;transition:border-color .15s;}
+    .snapshot-input:focus,.snapshot-input:hover{border-color:var(--accent);}
+    .snapshot-tag{font-size:11.5px;color:var(--muted);white-space:nowrap;background:var(--surface2);padding:2px 8px;border-radius:5px;}
+
+    /* ── KPI cards ── */
+    .kpi-row-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .kpi-card{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .2s;}
+    .kpi-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.08);}
+    .kpi-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+    .kpi-value{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1;color:var(--text);}
+    .kpi-sub{font-size:12px;margin-top:9px;display:flex;align-items:center;gap:5px;min-height:20px;}
+    .badge-up{color:var(--up);background:#eef8f4;padding:1px 6px;border-radius:4px;font-weight:600;}
+    .badge-down{color:var(--down);background:#fdf1ee;padding:1px 6px;border-radius:4px;font-weight:600;}
+
+    /* ── Chart cards ── */
+    .chart-card{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;}
+    .chart-title{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.1px;}
+    .chart-subtitle{font-size:12px;color:var(--muted);margin-top:3px;}
+    .chart-wrap{position:relative;}
+
+    /* ── Section label (pour les matrices) ── */
+    .section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:10px;}
+    .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    /* ── Tables matricielles historiques ── */
+    .matrix-wrap{overflow-x:auto;overflow-y:auto;max-height:460px;border-radius:8px;}
+    .mx-table{border-collapse:collapse;font-size:11.5px;white-space:nowrap;}
+    .mx-table thead th{position:sticky;top:0;z-index:2;background:var(--surface2);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:2px solid var(--border);text-align:right;}
+    .mx-table thead th.mx-name{text-align:left;}
+    .mx-table tbody td{padding:6px 10px;border-bottom:1px solid var(--border-light);text-align:right;color:var(--text-soft);}
+    .mx-table tbody td.mx-name{text-align:left;font-weight:600;color:var(--text);}
+    .mx-table tbody tr:hover td{background:var(--accent-bg);}
+    .mx-sticky{position:sticky;left:0;z-index:1;background:var(--surface);min-width:150px;max-width:150px;}
+    .mx-table thead .mx-sticky{z-index:3;background:var(--surface2);}
+    .mx-table tbody tr:hover .mx-sticky{background:var(--accent-bg);}
+    .mx-null{color:var(--border);}
+    .mx-bonus{color:var(--rech);font-weight:600;}
+    .mx-cur{font-weight:700;color:var(--accent);}
+    .mx-th-total{background:#dde6f9 !important;color:var(--accent) !important;font-weight:800;}
+    .mx-col-total{background:#eff3fc;font-weight:700;}
+    .mx-row-total td{background:#fef9ec !important;font-weight:700;color:var(--text);border-top:2px solid #e8c84a;}
+    .mx-row-total .mx-sticky{background:#fef9ec !important;}
+    .mx-row-total-label{color:var(--dorm);font-weight:800;letter-spacing:.3px;}
+    .mx-row-total .mx-col-total{background:#fde68a !important;color:var(--text);}
+
+    #tooltip{position:fixed;background:#1a2340;color:#fff;font-size:11px;padding:5px 10px;border-radius:5px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:9999;display:none;}
+
+    @media(max-width:1000px){
+      .split-layout{flex-direction:column;}
+      .split-col.col-left,.split-col.col-right{padding:0;}
+      .split-divider{width:100%;height:1px;margin:12px 0;}
+      .kpi-row-2{grid-template-columns:1fr 1fr;}
+    }
+    @media(max-width:560px){.kpi-row-2{grid-template-columns:1fr;}main{padding:16px;}header{padding:12px 16px;}}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="page-title">
+    <h1>Wallets clients</h1>
+    <p id="pageSubtitle"></p>
+  </div>
+  <button class="btn-export">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Exporter
+  </button>
+</header>
+
+<main>
+
+  <div class="split-layout">
+
+    <!-- ══════════════════════════════════════════════════
+         COLONNE GAUCHE — Filtre B (snapshot date)
+         Solde total · Wallets actifs · Répartition
+    ══════════════════════════════════════════════════ -->
+    <div class="split-col col-left">
+
+      <!-- Filtre B centré -->
+      <div class="col-filter-card">
+        <div class="col-filter-label" style="color:var(--accent);">
+          <span style="background:var(--accent);"></span>
+          Solde · Wallets actifs · Distribution des wallets
+        </div>
+        <!-- Ligne date principale -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;width:24px;text-align:right;">Au</span>
+            <div class="snapshot-wrap">
+              <input type="date" id="snapshotDate" class="snapshot-input" onchange="applySnapshot()" />
+              <span class="snapshot-tag">à 23h59</span>
+            </div>
+          </div>
+          <!-- Ligne date de comparaison -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:24px;text-align:right;">vs</span>
+            <input type="date" id="comparisonDate" class="snapshot-input" onchange="applySnapshot()"
+              style="height:34px;border-color:var(--border-light);" />
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Snapshot -->
+      <div class="kpi-row-2">
+        <div class="kpi-card">
+          <div class="kpi-label">Solde total en circulation</div>
+          <div class="kpi-value" id="kpi-solde">—</div>
+          <div class="kpi-sub"><span id="badge-solde" class="badge-up">—</span><span class="dyn-vs-snap" style="color:var(--muted)">vs date préc.</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Wallets actifs</div>
+          <div class="kpi-value" id="kpi-actifs">—</div>
+          <div class="kpi-sub"><span id="badge-actifs" class="badge-up">—</span><span class="dyn-vs-snap" style="color:var(--muted)">vs date préc.</span></div>
+        </div>
+      </div>
+
+      <!-- Graphique Distribution des wallets (Filtre B — snapshot) -->
+      <div class="chart-card" style="flex:1;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Distribution des wallets</div>
+            <div class="chart-subtitle" id="distribSubtitle">Wallets actifs & inactifs par tranche</div>
+          </div>
+          <div id="distribStats" style="font-size:11.5px;text-align:right;line-height:1.8;flex-shrink:0;"></div>
+        </div>
+        <div class="chart-wrap" style="height:220px"><canvas id="distribChart"></canvas></div>
+      </div>
+
+    </div>
+
+    <!-- ── Séparateur vertical ── -->
+    <div class="split-divider"></div>
+
+    <!-- ══════════════════════════════════════════════════
+         COLONNE DROITE — Filtre A (période)
+         Rechargements · Dépenses · Distribution
+    ══════════════════════════════════════════════════ -->
+    <div class="split-col col-right">
+
+      <!-- Filtre A centré -->
+      <div class="col-filter-card">
+        <div class="col-filter-label" style="color:var(--rech);">
+          <span style="background:var(--rech);"></span>
+          Rechargements · Dépenses · Répartition des dépenses — sur la période
+        </div>
+        <div class="period-relative-container">
+          <div class="period-group">
+            <button class="period-btn active" onclick="setPeriod('7j',this)">7 jours</button>
+            <button class="period-btn" onclick="setPeriod('1m',this)">1 mois</button>
+            <button class="period-btn" onclick="setPeriod('3m',this)">3 mois</button>
+            <button class="period-btn" onclick="setPeriod('6m',this)">6 mois</button>
+            <button class="period-btn" onclick="setPeriod('1y',this)">1 an</button>
+            <button class="period-btn" onclick="setPeriod('custom',this)">Personnalisé</button>
+          </div>
+          <div class="custom-date-wrap" id="customDateWrap">
+            <label>Du</label><input type="date" id="dateFrom" value="2025-11-01"/>
+            <span class="sep">→</span>
+            <label>au</label><input type="date" id="dateTo" value="2026-04-30"/>
+            <button class="btn-apply" onclick="applyCustomDate()">Appliquer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Période -->
+      <div class="kpi-row-2">
+        <div class="kpi-card">
+          <div class="kpi-label">Rechargements <span style="font-size:10px;font-weight:400;text-transform:none;">— période</span></div>
+          <div class="kpi-value" id="kpi-rech">—</div>
+          <div class="kpi-sub"><span id="badge-rech" class="badge-up">—</span><span class="dyn-vs-period" style="color:var(--muted)">vs période préc.</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Dépenses <span style="font-size:10px;font-weight:400;text-transform:none;">— période</span></div>
+          <div class="kpi-value" id="kpi-dep">—</div>
+          <div class="kpi-sub"><span id="badge-dep" class="badge-up">—</span><span class="dyn-vs-period" style="color:var(--muted)">vs période préc.</span></div>
+        </div>
+      </div>
+
+      <!-- Graphique Répartition des dépenses (Filtre A — période) -->
+      <div class="chart-card" style="flex:1;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Répartition des dépenses</div>
+            <div class="chart-subtitle" id="repartSubtitle">Par catégorie sur la période</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px"><canvas id="repartChart"></canvas></div>
+      </div>
+
+    </div>
+  </div><!-- /split-layout -->
+
+  <!-- ── Tableaux matriciels historiques (pleine largeur) ── -->
+  <div class="section-label">Solde fin de mois — Historique</div>
+  <div class="chart-card" style="padding:0;overflow:hidden;">
+    <div class="chart-header" style="padding:18px 22px 10px;">
+      <div>
+        <div class="chart-title">Évolution des wallets par client</div>
+        <div class="chart-subtitle" id="soldeMatrixSubtitle">Solde de clôture à fin de chaque mois</div>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <table class="mx-table" id="soldeMatrixTable"></table>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:24px;">Bonus par mois — Historique</div>
+  <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:32px;">
+    <div class="chart-header" style="padding:18px 22px 10px;">
+      <div>
+        <div class="chart-title">Bonus attribués par client</div>
+        <div class="chart-subtitle" id="bonusMatrixSubtitle">Montant du bonus crédité chaque mois</div>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <table class="mx-table" id="bonusMatrixTable"></table>
+    </div>
+  </div>
+
+</main>
+
+<div id="tooltip"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIGURATION
+// ══════════════════════════════════════════
+// Mettre à jour CLUB_OPENING_DATE et CLUB_OPENING_LABEL avec la vraie date d'ouverture
+const CLUB_OPENING_DATE  = new Date(2024, 0, 1);   // ex: new Date(2023, 8, 1) = Sept 2023
+const CLUB_OPENING_LABEL = 'Ouverture du club';     // libellé dans les sous-titres des matrices
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let currentPeriod = '7j';
+
+const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+const TT = {backgroundColor:'#1a2340',borderColor:'transparent',borderWidth:0,titleColor:'#fff',bodyColor:'#c8cfe0',padding:10,cornerRadius:6,boxPadding:4};
+const SCALE_X  = {grid:{color:'rgba(0,0,0,0.04)',drawBorder:false},ticks:{color:'#8892aa',font:{size:11}},border:{display:false}};
+const SCALE_Y0 = {grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8892aa',font:{size:11}},border:{display:false},min:0};
+
+function seededRand(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/4294967296;};}
+function fmtEur(n){return (n>=1000?Math.floor(n/1000)+' '+String(n%1000).padStart(3,'0'):String(n))+' €';}
+function fmtNum(n){return n>=1000?Math.floor(n/1000)+' '+String(n%1000).padStart(3,'0'):String(n);}
+
+// ══════════════════════════════════════════
+//  UTILITAIRES DATE
+// ══════════════════════════════════════════
+function fmtDate(d) {
+  const p = n => String(n).padStart(2,'0');
+  return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear();
+}
+
+function todayISO() {
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+}
+
+// ── Libellé période Filtre A ──────────────────────────────────────────────────
+function getPeriodLabel() {
+  const today = new Date();
+  if (currentPeriod === 'now') return fmtDate(today);
+  if (currentPeriod === 'custom') {
+    const fv = document.getElementById('dateFrom').value;
+    const tv = document.getElementById('dateTo').value;
+    if (fv && tv) return fmtDate(new Date(fv+'T00:00:00')) + ' → ' + fmtDate(new Date(tv+'T00:00:00'));
+    return 'Période personnalisée';
+  }
+  const from = new Date(today);
+  if      (currentPeriod==='7j') from.setDate(today.getDate()-7);
+  else if (currentPeriod==='1m') from.setMonth(today.getMonth()-1);
+  else if (currentPeriod==='3m') from.setMonth(today.getMonth()-3);
+  else if (currentPeriod==='6m') from.setMonth(today.getMonth()-6);
+  else if (currentPeriod==='1y') from.setFullYear(today.getFullYear()-1);
+  return fmtDate(from) + ' → ' + fmtDate(today);
+}
+
+// ── Période déduite de la date snapshot (Filtre B) ────────────────────────────
+function getSnapshotPeriod() {
+  const val = document.getElementById('snapshotDate').value;
+  if (!val) return 'now';
+  const today = new Date();
+  const snap  = new Date(val + 'T23:59:59');
+  const diffDays = Math.floor((today - snap) / 86400000);
+  if (diffDays <= 0)   return 'now';
+  if (diffDays <= 7)   return '7j';
+  if (diffDays <= 31)  return '1m';
+  if (diffDays <= 92)  return '3m';
+  if (diffDays <= 183) return '6m';
+  return '1y';
+}
+
+function getSnapshotLabel() {
+  const val = document.getElementById('snapshotDate').value;
+  return val ? fmtDate(new Date(val + 'T00:00:00')) : fmtDate(new Date());
+}
+
+// ── Période déduite de la date de comparaison (Filtre B) ─────────────────────
+function getCompPeriod() {
+  const val = document.getElementById('comparisonDate').value;
+  if (!val) return null;
+  const today    = new Date();
+  const comp     = new Date(val + 'T23:59:59');
+  const diffDays = Math.floor((today - comp) / 86400000);
+  if (diffDays <= 0)   return 'now';
+  if (diffDays <= 7)   return '7j';
+  if (diffDays <= 31)  return '1m';
+  if (diffDays <= 92)  return '3m';
+  if (diffDays <= 183) return '6m';
+  return '1y';
+}
+
+function getCompLabel() {
+  const val = document.getElementById('comparisonDate').value;
+  return val ? fmtDate(new Date(val + 'T00:00:00')) : null;
+}
+
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const KPI_W = {
+  'now':    {solde:74200, soldeDelta:+2800, actifs:312,actifsDelta:+18, rech:9800, rechDelta:+740,  dep:8400, depDelta:+610},
+  '7j':     {solde:72600, soldeDelta:+420,  actifs:308,actifsDelta:+4,  rech:2100, rechDelta:+160,  dep:1780, depDelta:+130},
+  '1m':     {solde:69800, soldeDelta:+3200, actifs:295,actifsDelta:+12, rech:9200, rechDelta:+820,  dep:7800, depDelta:+620},
+  '3m':     {solde:63400, soldeDelta:+5800, actifs:272,actifsDelta:+28, rech:24000,rechDelta:+2100, dep:20500,depDelta:+1700},
+  '6m':     {solde:54200, soldeDelta:+8400, actifs:245,actifsDelta:+42, rech:42000,rechDelta:+3800, dep:36000,depDelta:+3100},
+  '1y':     {solde:41000, soldeDelta:+9200, actifs:198,actifsDelta:+68, rech:76000,rechDelta:+8200, dep:65000,depDelta:+7100},
+  'custom': {solde:58000, soldeDelta:+4200, actifs:258,actifsDelta:+22, rech:18000,rechDelta:+1600, dep:15400,depDelta:+1200}
+};
+
+const REPART = {
+  'now':    {sports:3850, resto:1240, location:980},
+  '7j':     {sports:540,  resto:180,  location:140},
+  '1m':     {sports:1820, resto:560,  location:440},
+  '3m':     {sports:4200, resto:1120, location:920},
+  '6m':     {sports:7400, resto:2100, location:1680},
+  '1y':     {sports:12600,resto:3800, location:2900},
+  'custom': {sports:3200, resto:980,  location:760}
+};
+
+// DISTRIB : pour chaque tranche [0–10, 10–25, 25–50, 50–100, 100–200, 200+]
+//   actifs/inactifs   = nombre de wallets
+//   actifsAmt/inactifsAmt = montant total (€) des wallets de cette tranche
+const DISTRIB = {
+  'now': {
+    actifs:      [42,  68,  85,  62,  38,  17],
+    inactifs:    [15,  22,  18,  12,   6,   2],
+    actifsAmt:   [210, 1156, 3145, 4650, 5700, 5950],
+    inactifsAmt: [75,  374,  666,  900,  900,  700],
+  },
+  '7j': {
+    actifs:      [48,  72,  88,  58,  34,  14],
+    inactifs:    [10,  18,  15,   9,   4,   1],
+    actifsAmt:   [240, 1224, 3256, 4350, 5100, 4900],
+    inactifsAmt: [50,  306,  555,  675,  600,  350],
+  },
+  '1m': {
+    actifs:      [52,  76,  82,  54,  30,  11],
+    inactifs:    [ 7,  14,  12,   7,   3,   1],
+    actifsAmt:   [260, 1292, 3034, 4050, 4500, 3850],
+    inactifsAmt: [35,  238,  444,  525,  450,  350],
+  },
+  '3m': {
+    actifs:      [58,  80,  78,  48,  26,   9],
+    inactifs:    [ 4,   9,   8,   5,   2,   0],
+    actifsAmt:   [290, 1360, 2886, 3600, 3900, 3150],
+    inactifsAmt: [20,  153,  296,  375,  300,    0],
+  },
+  '6m': {
+    actifs:      [65,  84,  70,  42,  20,   7],
+    inactifs:    [ 2,   6,   5,   3,   1,   0],
+    actifsAmt:   [325, 1428, 2590, 3150, 3000, 2450],
+    inactifsAmt: [10,  102,  185,  225,  150,    0],
+  },
+  '1y': {
+    actifs:      [78,  90,  58,  34,  14,   4],
+    inactifs:    [ 1,   3,   2,   1,   0,   0],
+    actifsAmt:   [390, 1530, 2146, 2550, 2100, 1400],
+    inactifsAmt: [ 5,   51,   74,   75,    0,    0],
+  },
+  'custom': {
+    actifs:      [55,  78,  80,  50,  28,  10],
+    inactifs:    [ 6,  12,  10,   7,   3,   1],
+    actifsAmt:   [275, 1326, 2960, 3750, 4200, 3500],
+    inactifsAmt: [30,  204,  370,  525,  450,  350],
+  },
+};
+
+const NAMES = [
+  'Sophie M.','Thomas R.','Claire D.','Lucas B.','Camille P.',
+  'Antoine L.','Inès F.','Marc G.','Julie S.','Nicolas T.',
+  'Léa C.','Romain V.','Emma W.','Maxime A.','Sarah K.',
+  'Pierre H.','Laura J.','Alexis N.','Manon E.','Hugo Q.',
+  'Céline Z.','Baptiste I.','Lucie Y.','Florian X.','Pauline U.',
+  'Olivier O.','Marine L.','Quentin M.','Alice R.','Sébastien D.',
+  'Nathalie B.','Julien C.','Amélie F.','Thibault G.','Clara H.',
+  'Vincent J.','Elisa K.','Arnaud N.','Chloé P.','Grégoire Q.',
+  'Aurélie S.','Damien T.','Mathilde V.','Clément W.','Noémie X.',
+  'Edouard Y.','Justine Z.','Benoît A.','Anaïs B.','Raphaël C.',
+  'Chantal D.','François M.','Isabelle R.','Patrick V.','Véronique L.',
+  'Thierry G.','Sandrine B.','Christophe N.','Nadège P.','Roland F.',
+  'Martine C.','Gilles A.','Brigitte S.','Michel T.','Christine K.',
+  'Fabrice H.','Delphine J.','Stéphane Q.','Valérie U.','Renaud O.',
+  'Corinne I.','Dominique W.',
+];
+
+const BONUS_AMOUNTS = [10, 30, 50, 150, 300];
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function setBadge(id, v, suffix='') {
+  const el = document.getElementById(id);
+  el.textContent = (v>=0?'▲ +':'▼ ')+Math.abs(v)+suffix;
+  el.className   = v>=0 ? 'badge-up' : 'badge-down';
+}
+
+function prevPeriodLabel() {
+  const m = {'now':'3 mois préc.','7j':'7j préc.','1m':'mois préc.','3m':'3 mois préc.','6m':'6 mois préc.','1y':'an préc.','custom':'période préc.'};
+  return m[currentPeriod] || 'période préc.';
+}
+
+// ══════════════════════════════════════════
+//  UPDATES — FILTRE A (période, colonne droite)
+// ══════════════════════════════════════════
+function updatePeriodKPIs() {
+  const k = KPI_W[currentPeriod] || KPI_W['now'];
+  document.querySelectorAll('.dyn-vs-period').forEach(el => el.textContent = 'vs ' + prevPeriodLabel());
+  document.getElementById('kpi-rech').textContent = fmtEur(k.rech);
+  setBadge('badge-rech', k.rechDelta, ' €');
+  document.getElementById('kpi-dep').textContent  = fmtEur(k.dep);
+  setBadge('badge-dep', k.depDelta, ' €');
+}
+
+// ══════════════════════════════════════════
+//  UPDATES — FILTRE B (snapshot, colonne gauche)
+// ══════════════════════════════════════════
+function updateSnapshotKPIs() {
+  const sp    = getSnapshotPeriod();
+  const kSnap = KPI_W[sp] || KPI_W['now'];
+
+  // Calcul des deltas : comparaison avec la date "vs" si saisie, sinon fallback sur les deltas par défaut
+  const cp = getCompPeriod();
+  let soldeDelta, actifsDelta, vsText;
+  if (cp !== null) {
+    const kComp  = KPI_W[cp] || KPI_W['now'];
+    soldeDelta   = kSnap.solde  - kComp.solde;
+    actifsDelta  = kSnap.actifs - kComp.actifs;
+    vsText       = 'vs ' + getCompLabel();
+  } else {
+    soldeDelta   = kSnap.soldeDelta;
+    actifsDelta  = kSnap.actifsDelta;
+    vsText       = 'vs date préc.';
+  }
+
+  document.getElementById('kpi-solde').textContent  = fmtEur(kSnap.solde);
+  setBadge('badge-solde',  soldeDelta,  ' €');
+  document.getElementById('kpi-actifs').textContent = fmtNum(kSnap.actifs);
+  setBadge('badge-actifs', actifsDelta);
+  document.querySelectorAll('.dyn-vs-snap').forEach(el => el.textContent = vsText);
+
+  // Sous-titre global
+  document.getElementById('pageSubtitle').textContent =
+    'Solde au ' + getSnapshotLabel() + (cp !== null ? ' vs ' + getCompLabel() : '') + ' · Flux : ' + getPeriodLabel();
+}
+
+// ══════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════
+
+// ── Répartition des dépenses (Filtre A — période) ────────────────────────────
+let repartChart;
+function buildRepartChart() {
+  const r = REPART[currentPeriod] || REPART['7j'];
+  document.getElementById('repartSubtitle').textContent = 'Par catégorie · ' + getPeriodLabel();
+  if (repartChart) repartChart.destroy();
+  repartChart = new Chart(document.getElementById('repartChart').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels:['🎾 Parties sportives','🍽️ Restauration','📦 Location & pro shop'],
+      datasets:[{
+        data:[r.sports, r.resto, r.location],
+        backgroundColor:['#2257c5','#d97706','#0e8f72'],
+        borderRadius:5, barPercentage:.55, categoryPercentage:.7
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>'  '+c.parsed.x.toLocaleString('fr-FR')+' €'}}},
+      scales:{
+        x:{...SCALE_Y0,ticks:{...SCALE_Y0.ticks,callback:v=>v>=1000?(v/1000)+'k €':v+' €'}},
+        y:{...SCALE_X,grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── Distribution des wallets (Filtre B — snapshot) ───────────────────────────
+let distribChart;
+function buildDistribChart() {
+  const sp = getSnapshotPeriod();
+  const d  = DISTRIB[sp] || DISTRIB['7j'];
+  document.getElementById('distribSubtitle').textContent = 'Wallets actifs & inactifs · au ' + getSnapshotLabel();
+
+  // ── Totaux pour l'en-tête ─────────────────────────────────────────────────
+  const totActifs    = d.actifs.reduce((s,v)=>s+v,0);
+  const totInactifs  = d.inactifs.reduce((s,v)=>s+v,0);
+  const totAmtActifs = d.actifsAmt.reduce((s,v)=>s+v,0);
+  const totAmtInact  = d.inactifsAmt.reduce((s,v)=>s+v,0);
+  document.getElementById('distribStats').innerHTML =
+    `<span style="color:var(--accent);font-weight:600">Actifs : ${totActifs} wallets — ${totAmtActifs.toLocaleString('fr-FR')} €</span><br>` +
+    `<span style="color:var(--muted)">Inactifs : ${totInactifs} wallets — ${totAmtInact.toLocaleString('fr-FR')} €</span><br>` +
+    `<span style="color:var(--text);font-weight:700;border-top:1px solid var(--border-light);display:block;padding-top:2px">` +
+      `Total : ${totActifs+totInactifs} wallets — ${(totAmtActifs+totAmtInact).toLocaleString('fr-FR')} €</span>`;
+
+  if (distribChart) distribChart.destroy();
+
+  const bleus = ['#c8d8f8','#a0bcf5','#7ba0f0','#5583e8','#2257c5','#1a3d8a'];
+  const gris  = ['#dde0e8','#cdd1db','#bdc2ce','#adb3c0','#9da4b2','#8d95a4'];
+
+  distribChart = new Chart(document.getElementById('distribChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['0–10 €','10–25 €','25–50 €','50–100 €','100–200 €','200 € +'],
+      datasets: [
+        {
+          label: 'Wallets actifs',
+          data: d.actifs,
+          amounts: d.actifsAmt,
+          backgroundColor: bleus,
+          borderRadius: 4, barPercentage: .45, categoryPercentage: .85,
+        },
+        {
+          label: 'Wallets inactifs',
+          data: d.inactifs,
+          amounts: d.inactifsAmt,
+          backgroundColor: gris,
+          borderRadius: 4, barPercentage: .45, categoryPercentage: .85,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { boxWidth: 11, font: { size: 11 }, color: '#3d4a66', padding: 14 }
+        },
+        tooltip: {
+          ...TT,
+          mode: 'index',
+          callbacks: {
+            label: ctx => {
+              const count = ctx.parsed.y;
+              const amt   = (ctx.dataset.amounts || [])[ctx.dataIndex] ?? 0;
+              const c = count === 1 ? 'wallet' : 'wallets';
+              return `  ${ctx.dataset.label} : ${count} ${c}  —  ${amt.toLocaleString('fr-FR')} €`;
+            },
+            footer: items => {
+              const totalCount = items.reduce((s,c) => s + c.parsed.y, 0);
+              const totalAmt   = items.reduce((s,c) => s + ((c.dataset.amounts||[])[c.dataIndex]??0), 0);
+              const c = totalCount === 1 ? 'wallet' : 'wallets';
+              return `  Total : ${totalCount} ${c}  —  ${totalAmt.toLocaleString('fr-FR')} €`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ...SCALE_X, grid: { display: false } },
+        y: { ...SCALE_Y0, ticks: { ...SCALE_Y0.ticks, callback: v => v + ' wallets' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  MATRICES HISTORIQUES
+// ══════════════════════════════════════════
+let MATRIX_DATA = null;
+
+function getMatrixMonths() {
+  const today  = new Date();
+  const months = [];
+  const d      = new Date(CLUB_OPENING_DATE);
+  d.setDate(1);
+  while (d.getFullYear() < today.getFullYear() ||
+        (d.getFullYear() === today.getFullYear() && d.getMonth() <= today.getMonth())) {
+    const yr = String(d.getFullYear()).slice(2);
+    months.push(MONTHS_FR[d.getMonth()] + " '" + yr);
+    d.setMonth(d.getMonth() + 1);
+  }
+  return months;
+}
+
+function computeMatrixData() {
+  if (MATRIX_DATA) return;
+  const months = getMatrixMonths();
+  const clients = NAMES.map((name, i) => {
+    let balance = 0, totalCharge = 0;
+    const endBalances = [], monthlyBonus = [];
+    months.forEach((_, j) => {
+      const r = seededRand(i * 89 + j * 13 + 23);
+      r();
+      const recharge = r() < 0.42 ? Math.round(60 + r() * 340) : 0;
+      const depense  = balance > 0 && r() < 0.56 ? Math.round(Math.min(15 + r() * 180, balance)) : 0;
+      const bonusRaw = recharge > 0 && r() < 0.10
+        ? (BONUS_AMOUNTS.filter(b => b <= Math.round(recharge * (0.10 + r() * 0.20))).slice(-1)[0] || 0) : 0;
+      const bonus = Math.min(bonusRaw, recharge);
+      totalCharge += recharge;
+      balance = Math.max(0, balance + recharge - depense + bonus);
+      endBalances.push(balance > 0 ? balance : null);
+      monthlyBonus.push(bonus > 0 ? bonus : null);
+    });
+    const totalBonus = monthlyBonus.reduce((s, v) => s + (v || 0), 0);
+    return {name, endBalances, monthlyBonus, totalBonus, soldeActuel: balance, totalCharge};
+  });
+  MATRIX_DATA = {months, clients};
+}
+
+function buildMatrices() {
+  computeMatrixData();
+  const {months, clients} = MATRIX_DATA;
+
+  // Sous-titres avec date d'ouverture du club
+  document.getElementById('soldeMatrixSubtitle').textContent =
+    'Solde de clôture à fin de chaque mois · ' + CLUB_OPENING_LABEL + ' → Aujourd\'hui';
+  document.getElementById('bonusMatrixSubtitle').textContent =
+    'Montant du bonus crédité chaque mois · ' + CLUB_OPENING_LABEL + ' → Aujourd\'hui';
+
+  // ── Table Solde ─────────────────────────────────────────────────────────────
+  const soldeCols        = months.map((_, j) => clients.reduce((s, c) => s + (c.endBalances[j] || 0), 0));
+  const soldeActuelTotal = clients.reduce((s, c) => s + c.soldeActuel, 0);
+
+  document.getElementById('soldeMatrixTable').innerHTML =
+    `<thead><tr>
+      <th class="mx-sticky mx-name">Client</th>
+      ${months.map(m => `<th>${m}</th>`).join('')}
+      <th class="mx-th-total">Solde actuel</th>
+    </tr></thead>
+    <tbody>
+      ${clients.map(c => `<tr>
+        <td class="mx-sticky mx-name">${c.name}</td>
+        ${c.endBalances.map(v => v !== null ? `<td>${fmtEur(v)}</td>` : `<td class="mx-null">—</td>`).join('')}
+        <td class="mx-col-total mx-cur">${fmtEur(c.soldeActuel)}</td>
+      </tr>`).join('')}
+      <tr class="mx-row-total">
+        <td class="mx-sticky mx-name mx-row-total-label">Total</td>
+        ${soldeCols.map(v => `<td>${fmtEur(v)}</td>`).join('')}
+        <td class="mx-col-total">${fmtEur(soldeActuelTotal)}</td>
+      </tr>
+    </tbody>`;
+
+  // ── Table Bonus ─────────────────────────────────────────────────────────────
+  const bonusCols     = months.map((_, j) => clients.reduce((s, c) => s + (c.monthlyBonus[j] || 0), 0));
+  const bonusTotalAll = clients.reduce((s, c) => s + c.totalBonus, 0);
+
+  document.getElementById('bonusMatrixTable').innerHTML =
+    `<thead><tr>
+      <th class="mx-sticky mx-name">Client</th>
+      ${months.map(m => `<th>${m}</th>`).join('')}
+      <th class="mx-th-total">Total bonus</th>
+    </tr></thead>
+    <tbody>
+      ${clients.map(c => `<tr>
+        <td class="mx-sticky mx-name">${c.name}</td>
+        ${c.monthlyBonus.map(v => v !== null ? `<td class="mx-bonus">+${fmtEur(v)}</td>` : `<td class="mx-null">—</td>`).join('')}
+        <td class="mx-col-total mx-bonus">${c.totalBonus ? '+'+fmtEur(c.totalBonus) : '—'}</td>
+      </tr>`).join('')}
+      <tr class="mx-row-total">
+        <td class="mx-sticky mx-name mx-row-total-label">Total</td>
+        ${bonusCols.map(v => v > 0 ? `<td class="mx-bonus">+${fmtEur(v)}</td>` : `<td class="mx-null">—</td>`).join('')}
+        <td class="mx-col-total mx-bonus">+${fmtEur(bonusTotalAll)}</td>
+      </tr>
+    </tbody>`;
+}
+
+// ══════════════════════════════════════════
+//  REFRESH
+// ══════════════════════════════════════════
+function refreshPeriod() {
+  updatePeriodKPIs();
+  buildRepartChart();
+  document.getElementById('pageSubtitle').textContent =
+    'Solde au ' + getSnapshotLabel() + ' · Flux : ' + getPeriodLabel();
+}
+
+function refreshSnapshot() {
+  updateSnapshotKPIs();
+  buildDistribChart();
+}
+
+function refreshAll() {
+  updatePeriodKPIs();
+  updateSnapshotKPIs();
+  buildRepartChart();
+  buildDistribChart();
+}
+
+// ══════════════════════════════════════════
+//  EVENTS
+// ══════════════════════════════════════════
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('customDateWrap').classList.toggle('open', p === 'custom');
+  if (p !== 'custom') refreshPeriod();
+}
+
+function applyCustomDate() { refreshPeriod(); }
+function applySnapshot()   { refreshSnapshot(); }
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+Chart.defaults.font.family = "'Inter',-apple-system,sans-serif";
+
+// Snapshot = aujourd'hui, comparaison = 1 mois en arrière par défaut
+document.getElementById('snapshotDate').value = todayISO();
+(function() {
+  const d = new Date(); d.setMonth(d.getMonth() - 1);
+  document.getElementById('comparisonDate').value =
+    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+})();
+
+refreshAll();
+buildMatrices();
+</script>
+</body>
+</html>
