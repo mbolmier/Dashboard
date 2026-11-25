@@ -1,51 +1,53 @@
-# Dashboards de pilotage pour un réseau de clubs de sports de raquette
+# Management dashboards for a network of racket-sport clubs
 
-> **EN.** Three interactive dashboards (court occupancy, customers & loyalty, prepaid wallets) built during my internship at ALL IN GROUP, in plain HTML, CSS and JavaScript with Chart.js. All names and figures are fictitious. **Live demo: https://mbolmier.github.io/Dashboard/**
+Three interactive dashboards I designed during my Data Analyst internship at ALL IN GROUP (2026), for a network of padel, tennis, badminton and pickleball clubs. Each one answers a specific management question and can be read in a few seconds: key figures at the top, compared with the previous period, then the details in charts.
 
-Trois tableaux de bord interactifs conçus pendant mon stage de Data Analyst chez ALL IN GROUP (2026), pour un réseau de clubs de padel, tennis, badminton et pickleball. Chacun répond à une question de pilotage précise et se lit en quelques secondes : des indicateurs clés en haut, comparés à la période précédente, puis le détail en graphiques.
+**All data is fictitious.** Customer names and figures are made up: series written in the code or produced by a fixed-seed pseudo-random generator. No real data is published.
 
-**Toutes les données sont fictives.** Les noms de clients et les chiffres sont inventés : séries écrites dans le code ou produites par un générateur pseudo-aléatoire à graine fixe. Aucune donnée réelle n'est publiée.
+**Live demo: https://mbolmier.github.io/Dashboard/**
 
-![Aperçu du dashboard de taux d'occupation](docs/occupation.png)
+![Preview of the court occupancy dashboard](docs/occupation.png)
 
-## Démo en ligne
+## Live demo
 
-| Dashboard | La question à laquelle il répond | Lien |
+| Dashboard | The question it answers | Link |
 |---|---|---|
-| Taux d'occupation des terrains | Quels terrains, quels jours et quelles heures sont pleins ou vides ? | [Ouvrir](https://mbolmier.github.io/Dashboard/Taux%20d'occupation%20des%20terrains.html) |
-| Clients & fidélisation | Combien de clients sont actifs, qui progresse, qui décroche ? | [Ouvrir](https://mbolmier.github.io/Dashboard/client.html) |
-| Wallets clients | Combien d'argent prépayé circule, et comment il est rechargé et dépensé ? | [Ouvrir](https://mbolmier.github.io/Dashboard/wallets.html) |
+| Court occupancy | Which courts, days and hours are full or empty? | [Open](https://mbolmier.github.io/Dashboard/Taux%20d'occupation%20des%20terrains.html) |
+| Customers & loyalty | How many customers are active, who is moving up, who is dropping off? | [Open](https://mbolmier.github.io/Dashboard/client.html) |
+| Customer wallets | How much prepaid money is in circulation, and how is it topped up and spent? | [Open](https://mbolmier.github.io/Dashboard/wallets.html) |
 
-## Ce que montre chaque dashboard
+The dashboards' interface is in French, like the company they were built for.
 
-### 1. Taux d'occupation des terrains
+## What each dashboard shows
 
-- **Filtres** : période (7 jours, 1, 3 ou 6 mois, 1 an, ou dates personnalisées), sport, type d'activité (tournois, animation, cours, jeu libre).
-- **Indicateurs** : taux d'occupation global et créneaux réservés, avec leur variation par rapport à la période précédente ; jour le moins actif ; heures occupées.
-- **Graphiques** : évolution mensuelle du taux d'occupation (avec la période précédente en comparaison), occupation moyenne par jour de la semaine, classement des terrains, heures bloquées par les tournois, cours et animations, et une heatmap heure × jour pour repérer les créneaux creux.
+### 1. Court occupancy
 
-### 2. Clients & fidélisation
+- **Filters**: period (7 days, 1, 3 or 6 months, 1 year, or custom dates), sport, activity type (tournaments, events, lessons, free play).
+- **Key figures**: overall occupancy rate and booked slots, with their change from the previous period; least active day; hours booked.
+- **Charts**: monthly occupancy trend (with the previous period for comparison), average occupancy by day of the week, court ranking, hours blocked by tournaments, lessons and events, and an hour × day heatmap to spot empty slots.
 
-- **Indicateurs** : total clients, clients actifs sur une fenêtre glissante de 3 mois, nouveaux clients, fréquence moyenne.
-- **Segmentation par fréquence de jeu** sur 3 mois : Rookie (1 partie), Spécialiste (2 à 3), Élite (4 à 5), Légende (6 et plus), avec l'évolution de chaque segment et le nombre de clients montés de segment.
-- **Flux** : nouveaux clients contre nouveaux inactifs, pour voir si la base grandit ou s'érode.
-- **Chiffre d'affaires par catégorie** (sports, restauration, location, abonnements), habitudes de jeu semaine / week-end, et top 50 des clients les plus actifs.
+### 2. Customers & loyalty
 
-### 3. Wallets clients
+- **Key figures**: total customers, active customers over a rolling 3-month window, new customers, average frequency.
+- **Segmentation by playing frequency** over 3 months: Rookie (1 game), Specialist (2 to 3), Elite (4 to 5), Legend (6 or more), with how each segment evolves and how many customers moved up a segment.
+- **Flows**: new customers versus newly inactive ones, to see whether the base is growing or shrinking.
+- **Revenue by category** (sports, restaurant, rentals, memberships), weekday / weekend playing habits, and the top 50 most active customers.
 
-- **Photo à une date donnée** : solde total en circulation, wallets actifs, distribution des wallets par tranche de solde (actifs et inactifs).
-- **Sur une période** : rechargements, dépenses et répartition des dépenses par catégorie.
-- **Historiques mensuels par client** : solde de fin de mois et bonus crédités.
+### 3. Customer wallets
 
-## Comment ça marche
+- **Snapshot at a given date**: total balance in circulation, active wallets, distribution of wallets by balance range (active and inactive).
+- **Over a period**: top-ups, spending and spending breakdown by category.
+- **Monthly history per customer**: end-of-month balance and bonuses credited.
 
-- **Un fichier HTML autonome par dashboard** (HTML, CSS, JavaScript), sans framework ni étape de build : il suffit de l'ouvrir dans un navigateur.
-- **Chart.js 4**, chargé depuis un CDN, dessine les barres et les courbes. La heatmap et les tableaux sont construits directement en JavaScript.
-- **Données générées dans le navigateur** : un générateur pseudo-aléatoire à graine fixe (`seededRand`, un générateur congruentiel linéaire) produit des séries reproductibles. La même période affiche donc toujours les mêmes chiffres.
-- **Un seul point de rafraîchissement** : chaque changement de filtre appelle `refreshAll()`, qui recalcule les indicateurs, les badges de variation par rapport à la période précédente, puis redessine les graphiques.
-- **Mise en page adaptée aux écrans plus étroits** (media queries) et **publication avec GitHub Pages**.
+## How it works
 
-## Lancer en local
+- **One self-contained HTML file per dashboard** (HTML, CSS, JavaScript), with no framework and no build step: just open it in a browser.
+- **Chart.js 4**, loaded from a CDN, draws the bar and line charts. The heatmap and tables are built directly in JavaScript.
+- **Data generated in the browser**: a fixed-seed pseudo-random generator (`seededRand`, a linear congruential generator) produces reproducible series, so the same period always shows the same figures.
+- **A single refresh point**: every filter change calls `refreshAll()`, which recomputes the key figures and the change badges against the previous period, then redraws the charts.
+- **Layout adapted to narrower screens** (media queries) and **published with GitHub Pages**.
+
+## Run it locally
 
 ```bash
 git clone https://github.com/mbolmier/Dashboard.git
@@ -53,12 +55,12 @@ cd Dashboard
 python3 -m http.server 8000
 ```
 
-Puis ouvrir http://localhost:8000. Ouvrir directement un des fichiers HTML dans le navigateur fonctionne aussi.
+Then open http://localhost:8000. Opening one of the HTML files directly in the browser also works.
 
-## Limites
+## Limitations
 
-Ce sont des prototypes de conception : les données sont fictives et le bouton « Exporter » n'est pas encore branché. Pour passer en production, il faudrait remplacer les séries générées par un export des réservations et des ventes, mis à jour automatiquement.
+These are design prototypes: the data is fictitious and the "Exporter" (export) button is not wired up yet. To go to production, the generated series would be replaced by an automatically refreshed export of bookings and sales.
 
 ---
 
-Martin Bolmier, étudiant en BUT Science des données · [LinkedIn](https://www.linkedin.com/in/martin-bolmier-501b92301/)
+Martin Bolmier, Data Science student (BUT Science des données, Lyon) · [LinkedIn](https://www.linkedin.com/in/martin-bolmier-501b92301/)
