@@ -63,4 +63,4 @@ These are design prototypes: the data is fictitious and the "Exporter" (export) 
 
 ---
 
-Martin Bolmier, Data Science student (BUT Science des données, Lyon) · [LinkedIn](https://www.linkedin.com/in/martin-bolmier-501b92301/)
+Martin Bolmier, Data Science student (BUT Science des données, Lyon) · [LinkedIn](https://www.linkedin.com/in/mbolmier/)
