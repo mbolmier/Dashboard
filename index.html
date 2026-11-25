@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboards de pilotage — clubs de sports de raquette</title>
+  <style>
+    :root {
+      --bg:#f4f5f7; --surface:#ffffff; --border:#e3e6ed;
+      --accent:#2257c5; --accent-bg:#eff3fc;
+      --text:#1a2340; --text-soft:#3d4a66; --muted:#8892aa;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:56px 24px;}
+    main{max-width:960px;margin:0 auto;}
+    h1{font-size:28px;font-weight:700;letter-spacing:-.6px;margin-bottom:8px;}
+    .lead{font-size:15px;color:var(--text-soft);line-height:1.55;max-width:680px;margin-bottom:12px;}
+    .note{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);border-radius:6px;padding:5px 10px;margin-bottom:36px;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+    a.card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s;}
+    a.card:hover,a.card:focus-visible{border-color:var(--accent);transform:translateY(-2px);outline:none;}
+    .card h2{font-size:17px;font-weight:700;margin-bottom:8px;}
+    .card p{font-size:13.5px;color:var(--text-soft);line-height:1.5;margin-bottom:14px;}
+    .card span{font-size:13px;font-weight:600;color:var(--accent);}
+    footer{margin-top:40px;font-size:12.5px;color:var(--muted);}
+    footer a{color:var(--muted);}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Dashboards de pilotage</h1>
+    <p class="lead">Trois tableaux de bord interactifs conçus pendant mon stage de Data Analyst chez ALL IN GROUP, pour un réseau de clubs de padel, tennis, badminton et pickleball. HTML, CSS et JavaScript, graphiques Chart.js.</p>
+    <p class="note">Données entièrement fictives</p>
+
+    <div class="grid">
+      <a class="card" href="Taux%20d'occupation%20des%20terrains.html">
+        <h2>Taux d'occupation des terrains</h2>
+        <p>Quels terrains, quels jours et quelles heures sont pleins ou vides ? Filtres par sport et par activité, heatmap heure × jour.</p>
+        <span>Ouvrir →</span>
+      </a>
+      <a class="card" href="client.html">
+        <h2>Clients &amp; fidélisation</h2>
+        <p>Clients actifs, segments par fréquence de jeu, nouveaux clients contre inactifs, chiffre d'affaires par catégorie.</p>
+        <span>Ouvrir →</span>
+      </a>
+      <a class="card" href="wallets.html">
+        <h2>Wallets clients</h2>
+        <p>Solde prépayé en circulation, distribution des wallets, rechargements, dépenses et bonus par client.</p>
+        <span>Ouvrir →</span>
+      </a>
+    </div>
+
+    <footer>Martin Bolmier · <a href="https://github.com/mbolmier/Dashboard">Code source sur GitHub</a></footer>
+  </main>
+</body>
+</html>
